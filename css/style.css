@@ -18,22 +18,48 @@
     transform: translate(-50%, -50%);
     background-color: white;
     padding: 1rem 1.5rem;
-    width: 24rem;
+	width: 24rem;
+	height: 12%;
     border-radius: 0.5rem;
 }
 
+h1 {
+	text-align: center;
+    color: lightseagreen;
+    font-family: monospace;
+    font-size: 40px;
+    margin-top: 50px;
+}
+
+.container {
+	position: relative;
+	margin: 0 auto;
+	width: 60%;
+	height: 100%;
+	padding: 30px 20px;
+	box-shadow: 0 0 20px rgba(0,0,0,.3);
+    box-sizing: border-box;
+}
+
+.label {
+	margin-bottom: 25px;
+    font-size: 25px;
+    font-family: monospace;
+}
+
 .optionButton {
-	box-shadow:inset 0px 1px 0px 0px #ffffff;
-	border-radius:6px;
-	border:1px solid #dcdcdc;
-	display:inline-block;
-	cursor:pointer;
-	font-family:Verdana;
-	font-size:20px;
-	font-weight:bold;
-	padding:15px 30px;
-	text-decoration:none;
-	text-shadow:0px 1px 0px #ffffff;
+    box-shadow: inset 0px 1px 0px 0px #ffffff;
+    border-radius: 6px;
+    border: 2px solid #dcdcdc;
+    display: inline-block;
+    cursor: pointer;
+    font-family: Verdana;
+    font-size: 20px;
+    font-weight: bold;
+    padding: 12px 40px;
+    text-decoration: none;
+    text-shadow: 0px 1px 0px #ffffff;
+    margin-left: 20px;
 }
 
 	.optionButton:active {
@@ -41,21 +67,25 @@
 		top:1px;
 	}
 
-	.optionButton #option-x {
+	.modal #option-x {
 		background-color:#f9f9f9;
-		color:#04401c;
+		color:#04401e;
+		float: left;
+    	margin-left: 15%;
 	}
 
-	.optionButton #option-x:hover {
+	.modal #option-x:hover {
 		background-color:#d6e8e2;
 	}
 
-	.optionButton #option-o {
+	.modal #option-o {
 		background-color:#fafafa;
 		color:#73326f;
+		float: right;
+    	margin-right: 15%;
 	}
-
-	.optionButton #option-o:hover {
+	
+	.modal #option-o:hover {
 		background-color:#d6cbd6;
 	}
 
@@ -64,4 +94,40 @@
     visibility: visible;
     transform: scale(1.0);
     transition: visibility 0s linear 0s, opacity 0.25s 0s, transform 0.25s;
+}
+
+table {
+    border-collapse: collapse;
+    margin: 0px auto;
+}
+
+td {
+    border-style: solid;
+    height: 40px;
+    width: 40px;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 30px;
+    cursor: pointer;
+}
+
+#items {
+	width: 330px;
+	margin: 0 auto;
+}
+#items > .item {
+	float: left;
+	width: 100px;
+	height: 100px;
+	line-height: 100px;
+	font-size: 50px;
+	margin: 5px;
+	text-align: center;
+	color: #393D49;
+	background-color: #eeeeee;
+	-webkit-border-radius: 3px;
+	-moz-border-radius: 3px;
+	-ms-border-radius: 3px;
+	-o-border-radius: 3px;
+	cursor: pointer;
 }
