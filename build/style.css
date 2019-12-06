@@ -43,11 +43,11 @@
 
 	.optionButton #option-x {
 		background-color:#f9f9f9;
-		color:#666666;
+		color:#04401c;
 	}
 
 	.optionButton #option-x:hover {
-		background-color:#dbdbdb;
+		background-color:#d6e8e2;
 	}
 
 	.optionButton #option-o {
