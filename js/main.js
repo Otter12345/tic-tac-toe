@@ -1,17 +1,158 @@
 var X = 'X';
 var O = 'O';
-var MAX = 100; //computer win
-var MIN = -100; //player win
+var MAX = 10; //computer win
+var MIN = -10; //player win
 var DRAW = 0; 
-var compBestMove = -1;
 var depth = 0;
-var isCompPlay = false;
 var rowNum = 3;
 var colNum = 3;
 var lastClicked;
 var playerToken;
 var compToken;
-var optimalMoves = [];
+let game;
+
+class Board {
+    constructor(board) {
+        this.empty = 0;
+        this.board_size = 9;
+        this.board = board ? board : Array(this.board_size).fill(this.empty);
+    }
+
+    getBoard() {
+        return this.board.slice(0);
+    }
+
+    getAvailablePos() {
+        return this.board.map(el => el === this.empty);
+    }
+
+    clone() {
+        return new Board(this.getBoard());
+    }
+
+    checkFinish() {
+        //check rows
+        for (var i = 0; i < 9; i += 3) {
+            if (this.board[i] && this.board[i] === this.board[i + 1] && this.board[i + 1] === this.board[i + 2]) {
+                return this.board[i];
+            }
+        }
+
+        //check cols
+        for (var i = 0; i < 3; i++) {
+            if (this.board[i] && this.board[i] === this.board[i + 3] && this.board[i] === this.board[i + 6]) {
+                return this.board[i];
+            }
+        }
+
+        //check diagonals
+        if (this.board[0] && this.board[0] === this.board[4] && this.board[0] === this.board[8]) return this.board[0];
+        if (this.board[2] && this.board[2] === this.board[4] && this.board[2] === this.board[6]) return this.board[2];
+
+        return 0;
+    }
+
+    makeMove(i, token) {
+        if (this.board[i] !== this.empty) return false;
+
+        this.board[i] = token;
+        return true;
+    }
+
+    areMovesAvailable() {
+        return this.getAvailablePos().reduce((pos, el) => pos || el, false);
+    }
+}
+
+class Game {
+    constructor(isCompPlay, endCallback) {
+        this.playerToken = playerToken;
+        this.compToken = compToken;
+        this.board = new Board();
+        if (isCompPlay) this.board.board[getRandomInt(9)] = this.compToken;
+        this.endCallback = endCallback;
+    }
+
+    minMax(tempBoard, depth, isCompPlay) {
+        if (depth === 0 || !tempBoard.areMovesAvailable()) return DRAW;
+
+        var isFinished = tempBoard.checkFinish();
+        if (isFinished) return isFinished === this.playerToken ? MIN : MAX;
+
+        var player = isCompPlay ? compToken : playerToken;
+
+        var scores = tempBoard.getAvailablePos().map((isAvailable, index) => {
+            if (isAvailable) {
+                var clonedBoard = tempBoard.clone();
+                clonedBoard.makeMove(index, player);
+                return this.minMax(clonedBoard, depth - 1, !isCompPlay);
+            }
+
+            return null;
+        });
+
+        if (isCompPlay) {
+            return tempBoard.getAvailablePos().reduce((pre, isAvailable, index) =>
+                (isAvailable ? (scores[index] > pre ? scores[index] : pre) : pre),
+                MIN);
+        }
+
+        return tempBoard.getAvailablePos().reduce((pre, isAvailable, index) =>
+            (isAvailable ? (scores[index] < pre ? scores[index] : pre) : pre),
+            MAX);
+    }
+
+    makeMove(index) {
+        if (!this.board.makeMove(index, this.playerToken)) return;
+        //game.printBoard();
+
+        //check if more moves are avaiable
+        if (!this.board.areMovesAvailable()) {
+            this.endCallback('It\'s a Draw!');
+        }
+
+        //find comp move
+        var bestPos = -1;
+        var bestVal = MIN;
+
+        this.board.getAvailablePos().forEach((isAvailable, index) => {
+            if (isAvailable) {
+                //make a move at this index
+                var clonedBoard = this.board.clone();
+                clonedBoard.makeMove(index, this.compToken);
+                var val = this.minMax(clonedBoard, 100, false);
+
+                if (bestVal < val) {
+                    bestVal = val;
+                    bestPos = index;
+                }
+            }
+        });
+
+        if (bestPos === -1) {
+            this.endCallback('You have won!');
+        }
+        else {
+            this.board.makeMove(bestPos, this.compToken);
+        }
+
+        var isFinished = this.board.checkFinish();
+        if (isFinished) {
+            var winner = isFinished === this.playerToken ? 'You' : 'Computer';
+            this.endCallback(`${winner} has won`);
+        }
+
+        game.printBoard();
+    }
+
+    printBoard() {
+        renderBoard(this.board.getBoard());
+    }
+}
+
+function getRandomInt(max) {
+    return Math.floor(Math.random() * Math.floor(max));
+}
 
 function generateModal(id) {
   var container = document.getElementById('body-container');  
@@ -81,15 +222,31 @@ function generateGrid(callback) {
   return grid;
 }
 
+function renderBoard(board) {
+    if (!board) return;
+    board.forEach((token, index) => {
+        var cell = document.getElementById('cell' + index);
+        if (token === 1) {
+            cell.innerHTML = X;
+            cell.classList.add('label-x');
+            cell.classList.remove('label-o');
+        }
+        else if (token === 2) {
+            cell.innerHTML = O;
+            cell.classList.remove('label-x');
+            cell.classList.add('label-o');
+        }
+    });
+}
+
 /*
   Define:
    0 => empty
    1 => x
    2 => o
 */
+
 function init() {
-  //TODO: allow refresh
-  //if (isOngoing) return;
   var body = document.getElementById('body-container');
 
   var modal = generateModal();
@@ -97,25 +254,23 @@ function init() {
   modal.appendChild(label);
 
   var xCallback = function() {
-		//localStorage.setItem('compToken', X);	
     console.log('player chose x.');
     dismissModal();
     playerToken = 1;
     compToken = 2;
     startGame('X');
-	};
-	var xOption = generateButton('optionButton', 'option-x', 'X', xCallback);
+    };
+
+  var xOption = generateButton('optionButton', 'option-x', 'X', xCallback);
 	
   var oCallback = function() {
-    //localStorage.setItem('compToken', O);
     console.log('player chose o.');
     playerToken = 2;
     compToken = 1;
-    isCompPlay = true;
     dismissModal();
     startGame('O');
 	};
-	var oOption = generateButton('optionButton', 'option-o', 'O', oCallback);
+  var oOption = generateButton('optionButton', 'option-o', 'O', oCallback);
 
   modal.appendChild(xOption);
   modal.appendChild(oOption);
@@ -129,33 +284,26 @@ function startGame(option) {
   body.appendChild(container);
 
   var choice = generateDiv('label', 'choice', 'Your Choice: ' + option);
-  var restartButton = generateButton('button', 'restartBtn', 'Restart', function() {document.location.reload()});
   container.appendChild(choice);
-  container.appendChild(restartButton);
 
   var gridContainer = generateDiv('', 'gridContainer');
-  
   var grid = generateGrid(playerMove);
+
   gridContainer.appendChild(grid);
   container.appendChild(gridContainer);
+  var restartButton = generateButton('optionButton', 'restartBtn', 'Restart', function() {document.location.reload()});
+    container.appendChild(restartButton);
 
-  if (option === 'O') {
-    compTurn();
-  }
-}
+   // start new game
+    var isCompPlay = option === X ? false : true;
 
-function compTurn() {
-  var board = getCurrentBoard();
-  findCmpMove(board, 0, true);
-  var bestMove = findBestMove();
-  displayMove(bestMove, compToken);
+    game = new Game(isCompPlay, msg => 
+        generatePrompt(msg));
+
+    game.printBoard();
 }
 
 function playerMove(el,row,col,i) {
-  var finish = checkFinish();
-
-  if(checkFinish() !== -1) window.location.reload();
-
   console.log("You clicked on element:",el);
   console.log("You clicked on row:",row);
   console.log("You clicked on col:",col);
@@ -163,219 +311,16 @@ function playerMove(el,row,col,i) {
 
   el.className='clicked';
 
-  if (el.innerHTML === '') {
-    el.innerHTML = playerToken === 1 ? X : O;
-    if (playerToken === 1) {
-      el.classList.add('label-x');
-      el.classList.remove('label-o');
+    if (el.innerHTML === '') {
+        game.makeMove(i);
     }
-    else {
-      el.classList.remove('label-x');
-      el.classList.add('label-o');
-    }
-
-    setTimeout(compTurn, 1000);
-  }
 
   if (lastClicked) lastClicked.className='';
   lastClicked = el;
 }
 
-function getWinner(token) {
-  if (token === -1) return;
-  if (token === 0) generatePrompt('It\'s a draw. Please restart the game.');
-  else if (token === playerToken) generatePrompt('You have won!');
-  else if (token === compToken) generatePrompt('You have lost..');
-}
-
-function checkFinish() {
-  var board = getCurrentBoard();
-  //check rows
-  for (var i = 0; i < 9; i += 3) {
-    if (board[i] && board[i] === board[i+1] && board[i+1] === board[i+2]) {
-      return board[i];
-    }
-  }
-
-  //check cols
-  for (var i = 0; i < 3; i++) {
-    if (board[i] && board[i] === board[i+3] && board[i] === board[i+6]) {
-      return board[i];
-    }
-  }
-
-  //check diagonals
-  if (board[0] && board[0]===board[4] && board[0] === board[8]) return board[0];
-  if (board[2] && board[2]===board[4] && board[2] === board[6]) return board[2];
-
-  //check if there is more empty spot to play
-  if (board.length === 9) {
-    return 0;
-  }
-
-  return -1;
-}
-
 function generatePrompt(message) {
-  window.prompt(message, init);
+    window.alert(message, init);
 }
 
-function generateNewBoard(pos, player) {
-  
-  var newBoard = _.clone(this.board);
-  newBoard[pos] = player;
-  return newBoard;
-}
-
-function getAvailablePos(grid) {
-  var res = [];
-  for (var i = 0; i < 9; i++) {
-    if (grid[i] !== 1 && grid[i] !== 2) res.push(i);
-  }
-
-  return res;
-}
-
-function calculate(grid,item) {
-	var count = 0;
-	var	blank_arr = [];
-
-	//填满当前棋局
-	for (var i = 0;i < 9;i++) {
-		if (!grid[i]) {
-			blank_arr.push(i);//记录当前棋局空格的位置
-			grid[i] = item;
-		}
-	}
-
-	if (isALine(grid[0],grid[1],grid[2]) && grid[0] == item) {
-		count++;
-	}
-	if (isALine(grid[0],grid[4],grid[8]) && grid[0] == item) {
-		count++;
-	}
-	if (isALine(grid[0],grid[3],grid[6]) && grid[0] == item) {
-		count++;
-	}
-	if (isALine(grid[2],grid[4],grid[6]) && grid[2] == item) {
-		count++;
-	}
-	if (isALine(grid[2],grid[5],grid[8]) && grid[2] == item) {
-		count++;
-	}
-	if (isALine(grid[3],grid[4],grid[5]) && grid[4] == item) {
-		count++;
-	}
-	if (isALine(grid[1],grid[4],grid[7]) && grid[4] == item) {
-		count++;
-	}
-	if (isALine(grid[6],grid[7],grid[8]) && grid[6] == item) {
-		count++;
-	}
-
-	//恢复棋局
-	for (var i = 0;i < blank_arr.length;i++) {
-		grid[blank_arr[i]] = '';
-	}
-	return count;
-}
-function findCmpMove(board, depth, isCompPlay) {
-  if (depth >= 1000) {
-     getWinner(checkFinish());
-     return board;
-  }
-
-  if (depth === 0) optimalMoves = [];
-
-  var bestValue;
-  var bestIndex = -1;    
-  var availablePos = getAvailablePos(board);
-  
-  var board = getCurrentBoard();
-
-  if (isCompPlay) {
-      bestValue = -1000;
-      availablePos.forEach(element => {
-          var newBoard = makeMove(element, board, compToken);
-          var value = findCmpMove(newBoard, depth + 1, !isCompPlay);
-          if (value > bestValue) {
-              var move = {
-                  index: element,
-                  value: value
-              };
-              optimalMoves.push(move);
-              bestValue = value;
-          }
-      });
-
-      return bestValue;
-  }
-
-  bestValue = 1000;
-  bestIndex = -1;
-
-  availablePos.forEach(element => {
-      var value = makeMove(element, board, playerToken);
-      if (value < bestValue) {
-          var move = {
-              index: element,
-              value: value
-          };
-          optimalMoves.push(move);
-          bestValue = value;
-      }
-  });
-
-  return bestValue;
-}
-
-function makeMove(pos, board, player) {
-  board[pos] = player;
-  return board;
-}
-
-function displayMove(index, player) {
-  if (index < 0) console.log('sthm is wrong');
-  var cell = document.getElementById('cell'+index);
-  if (compToken === 1) {
-    cell.innerHTML = X;
-    cell.classList.add('label-x');
-    cell.classList.remove('label-o');
-  }
-  else {
-    cell.innerHTML = O;    
-    cell.classList.remove('label-x');
-    cell.classList.add('label-o');
-  }
-
-  var isFinished = checkFinish();
-  if (isFinished !== -1) {
-      getWinner(isFinished);
-  }
-}
-
-function findBestMove() {
-  var value = -1;
-  var bestIndex = -1;
-  optimalMoves.forEach(element => {
-      if (element.value > value) bestIndex = element.index;
-  });
-
-  return bestIndex;
-}
-
-function changeTurn() {
-  isCompPlay = !isCompPlay;
-}
-
-function getCurrentBoard() {
-  var board = [];
-  for (var i = 0; i < 9; i++) {
-    var cell = document.getElementById('cell' + i).innerHTML;
-    if (cell !== '') board[i] = cell === X ? 1 : 2;
-  }
-
-  return board;
-}
-  
 init();

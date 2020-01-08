@@ -120,6 +120,13 @@ h1 {
 	height: 800px;
 }
 
+	#main-container #restartBtn {
+	margin-top: 40px;
+	border: 2px solid lightseagreen;
+	font-weight: normal;
+    color: lightcoral;
+}
+
 table {
     border-collapse: collapse;
     margin: 0px auto;
