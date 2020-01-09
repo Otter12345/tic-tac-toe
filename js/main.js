@@ -122,10 +122,7 @@ class Game {
             }
         });
 
-        if (bestPos === -1) {
-            this.endCallback('You have won!');
-        }
-        else {
+        if (bestPos !== -1) {
             this.board.makeMove(bestPos, this.compToken);
         }
 
