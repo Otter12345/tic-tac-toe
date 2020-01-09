@@ -103,11 +103,6 @@ class Game {
 
     makeMove(index) {
         if (!this.board.makeMove(index, this.playerToken)) return;
-      
-        //check if more moves are avaiable
-        if (!this.board.areMovesAvailable()) {
-            this.endCallback('It\'s a Draw!');
-        }
 
         //find comp move
         var bestPos = -1;
@@ -134,8 +129,7 @@ class Game {
             this.board.makeMove(bestPos, this.compToken);
         }
 
-        game.printBoard(this.board.getBoard());
-
+        //check if game ends
         var isFinished = this.board.checkFinish();
         if (isFinished) {
             var winner = isFinished === this.playerToken ? 'You have won!' : 'You have lost..';
@@ -144,6 +138,8 @@ class Game {
         else if (!this.board.areMovesAvailable()) {
             this.endCallback('It\'s a Draw!');
         }
+
+        game.printBoard(this.board.getBoard());
     }
 
     printBoard(board) {
